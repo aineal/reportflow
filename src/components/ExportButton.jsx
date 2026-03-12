@@ -1,6 +1,5 @@
 import { useState } from "react";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 
 export default function ExportButton({ rows, fileName, activeSheet }) {
   const [exporting, setExporting] = useState(false);
@@ -10,24 +9,45 @@ export default function ExportButton({ rows, fileName, activeSheet }) {
     try {
       const doc = new jsPDF({ orientation: "landscape" });
       const cols = rows.length ? Object.keys(rows[0]) : [];
-      const title = `${fileName} — ${activeSheet}`;
+      const colWidth = Math.min(40, (doc.internal.pageSize.getWidth() - 28) / cols.length);
+      const rowHeight = 7;
+      let y = 36;
 
+      // Title
       doc.setFontSize(16);
       doc.setTextColor(16, 185, 129);
       doc.text("FinReport Studio", 14, 16);
       doc.setFontSize(10);
       doc.setTextColor(100);
-      doc.text(title, 14, 24);
+      doc.text(`${fileName} — ${activeSheet}`, 14, 24);
       doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 30);
 
-      autoTable(doc, {
-        startY: 36,
-        head: [cols],
-        body: rows.slice(0, 500).map((r) => cols.map((c) => r[c] ?? "")),
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: "bold" },
-        alternateRowStyles: { fillColor: [245, 247, 250] },
-        margin: { left: 14, right: 14 },
+      // Header row
+      doc.setFillColor(16, 185, 129);
+      doc.rect(14, y, doc.internal.pageSize.getWidth() - 28, rowHeight, "F");
+      doc.setTextColor(255);
+      doc.setFontSize(7);
+      doc.setFont(undefined, "bold");
+      cols.forEach((c, i) => {
+        doc.text(String(c).slice(0, 16), 15 + i * colWidth, y + 5);
+      });
+
+      // Data rows
+      doc.setFont(undefined, "normal");
+      rows.slice(0, 100).forEach((row, ri) => {
+        y += rowHeight;
+        if (y > doc.internal.pageSize.getHeight() - 20) {
+          doc.addPage();
+          y = 20;
+        }
+        if (ri % 2 === 0) {
+          doc.setFillColor(245, 247, 250);
+          doc.rect(14, y, doc.internal.pageSize.getWidth() - 28, rowHeight, "F");
+        }
+        doc.setTextColor(50);
+        cols.forEach((c, i) => {
+          doc.text(String(row[c] ?? "").slice(0, 16), 15 + i * colWidth, y + 5);
+        });
       });
 
       doc.save(`${fileName}_${activeSheet}.pdf`);
