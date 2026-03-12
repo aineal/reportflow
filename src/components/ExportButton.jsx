@@ -9,45 +9,49 @@ export default function ExportButton({ rows, fileName, activeSheet }) {
     try {
       const doc = new jsPDF({ orientation: "landscape" });
       const cols = rows.length ? Object.keys(rows[0]) : [];
-      const colWidth = Math.min(40, (doc.internal.pageSize.getWidth() - 28) / cols.length);
-      const rowHeight = 7;
-      let y = 36;
 
-      // Title
+      // Header
       doc.setFontSize(16);
       doc.setTextColor(16, 185, 129);
       doc.text("FinReport Studio", 14, 16);
       doc.setFontSize(10);
-      doc.setTextColor(100);
+      doc.setTextColor(100, 100, 100);
       doc.text(`${fileName} — ${activeSheet}`, 14, 24);
       doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 30);
 
+      // Table setup
+      const startY = 38;
+      const rowH = 8;
+      const pageW = doc.internal.pageSize.getWidth();
+      const colW = Math.min(40, (pageW - 28) / cols.length);
+
       // Header row
       doc.setFillColor(16, 185, 129);
-      doc.rect(14, y, doc.internal.pageSize.getWidth() - 28, rowHeight, "F");
-      doc.setTextColor(255);
-      doc.setFontSize(7);
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
       doc.setFont(undefined, "bold");
       cols.forEach((c, i) => {
-        doc.text(String(c).slice(0, 16), 15 + i * colWidth, y + 5);
+        doc.rect(14 + i * colW, startY, colW, rowH, "F");
+        doc.text(String(c).slice(0, 14), 15 + i * colW, startY + 5.5);
       });
 
       // Data rows
       doc.setFont(undefined, "normal");
+      doc.setTextColor(40, 40, 40);
       rows.slice(0, 100).forEach((row, ri) => {
-        y += rowHeight;
-        if (y > doc.internal.pageSize.getHeight() - 20) {
-          doc.addPage();
-          y = 20;
-        }
+        const y = startY + rowH * (ri + 1);
         if (ri % 2 === 0) {
           doc.setFillColor(245, 247, 250);
-          doc.rect(14, y, doc.internal.pageSize.getWidth() - 28, rowHeight, "F");
+          cols.forEach((_, i) => doc.rect(14 + i * colW, y, colW, rowH, "F"));
         }
-        doc.setTextColor(50);
         cols.forEach((c, i) => {
-          doc.text(String(row[c] ?? "").slice(0, 16), 15 + i * colWidth, y + 5);
+          doc.text(String(row[c] ?? "").slice(0, 14), 15 + i * colW, y + 5.5);
         });
+
+        // New page if needed
+        if (y + rowH * 2 > doc.internal.pageSize.getHeight() - 10) {
+          doc.addPage();
+        }
       });
 
       doc.save(`${fileName}_${activeSheet}.pdf`);
