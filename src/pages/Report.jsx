@@ -58,9 +58,6 @@ export default function Report() {
         {/* Charts */}
         <ChartPanel rows={rows} />
 
-        {/* Pivot Table */}
-        <PivotTable rows={rows} />
-
         {/* Table */}
         <DataTable rows={rows} />
       </div>
