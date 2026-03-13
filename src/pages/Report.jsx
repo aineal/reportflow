@@ -5,7 +5,6 @@ import SummaryCards from "../components/SummaryCards";
 import DataTable from "../components/DataTable";
 import ChartPanel from "../components/ChartPanel";
 import ExportButton from "../components/ExportButton";
-import PivotTable from "../components/PivotTable";
 
 export default function Report() {
   const navigate = useNavigate();
